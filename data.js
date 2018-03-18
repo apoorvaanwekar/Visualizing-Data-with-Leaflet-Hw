@@ -13,7 +13,7 @@ d3.json(quakeUrl, function(error, quakeData) {
     console.log("In here")
     console.log(quakeData)
     // create leaflet map
-    var myMap = L.map("myMap", {
+    var myMap = L.map("map", {
         center: [37.09, -95.71],
         zoom: 5,
     });
