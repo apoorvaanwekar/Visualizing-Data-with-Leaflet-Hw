@@ -8,7 +8,7 @@ var lightViewLayer = 'https://api.mapbox.com/styles/v1/mapbox/light-v9/tiles/256
 
 var satelliteViewLayer = 'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v9/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYWFud2VrYXIiLCJhIjoiY2plc3JlbzhoMWtoMzMzcW4ycjFseGFubCJ9.UONw6yP0mYdLLUQtyX9oyw';
 
-var platesData = 'platesData/PB2002_boundaries.json';
+var platesData = './platesData/PB2002_boundaries.json';
 
 // base layers
 var darkView = L.tileLayer(darkViewLayer);
@@ -22,19 +22,28 @@ function markerSize (magnitude) {
 
 var legendInfo = [];
 
+
+
 // call to earthquake url
 d3.json(quakeUrl, function (error, data) {
   // colors based on magnitude
-  var getColors = d3.scaleLinear().domain(d3.extent(data.features, function (earthquake) {
+  var getColors2 = d3.scaleLinear().domain(d3.extent(data.features, function (earthquake) {
+    // anything 5+ should be same color
     return +earthquake.properties.mag;
-  })).range(['yellowgreen', 'red']);
+  })).range(['greenyellow', 'red']);
+
+  var idx;
+  for (idx = 0; idx <= 5; idx++) {
+    legendInfo.push(getColors2(idx));
+  }
+  console.log("Colors " + getColors2);
 
   // add geoJSON data
   var quakesGeoJSON = L.geoJSON(data, {
     pointToLayer: function (feature, latlng) {
       var mSize = markerSize(+feature.properties.mag);
-      var mColor = getColors(+feature.properties.mag);
-      legendInfo.push(+feature.properties.mag, mColor);
+      var mColor = getColors2(+feature.properties.mag);
+      //legendInfo.push(+feature.properties.mag, mColor);
       return new L.CircleMarker(latlng, {
         radius: mSize,
         fillColor: mColor,
@@ -48,21 +57,27 @@ d3.json(quakeUrl, function (error, data) {
     }
   });
 
-  legendInfo.sort(function(x, y){return x-y;});
-
-  console.log('Legends Info ' + legendInfo);
+  legendInfo.sort();
 
   // call to tectonic plates json file
   d3.json(platesData, function (error, pData) {
     // create layer with geoJSON
-    var platesGeoJSON = L.geoJSON(pData);
+    var platesGeoJSON = L.geoJSON(pData, {
+      style: function(feature) {
+        return {
+          color: "#999",
+          weight: 1,
+          fillOpacity: 0.1
+        };
+      }
+    });
 
     // create leaflet map
     var myMap = L.map("map", {
       center: [37.09, -95.71],
       zoom: 5,
       layers: [
-        satelliteView, quakesGeoJSON, platesGeoJSON
+        lightView, quakesGeoJSON, platesGeoJSON
       ]
     });
 
@@ -76,17 +91,24 @@ d3.json(quakeUrl, function (error, data) {
       var labels = [];
 
       // Add min & max
-      var legInfo = "<h1>Earthquake Magnitude</h1>" +
-          "<div class=\"labels\">" +
-            "<div class=\"min\">" + legendInfo[0][0] + "</div>" +
-            "<div class=\"max\">" + legendInfo[legendInfo.length - 1][0] + "</div>" +
-          "</div>";
+      var legInfo = "<h1>Earthquake Magnitude</h1>"/* +
+            "<div class=\"labels\">" +
+            "<div class=\"min\">" + legendInfo[0] + "</div>" +
+            "<div class=\"max\">" + legendInfo[legendInfo.length - 1] + "</div>" +
+          "</div>"*/;
+
+      console.log("Legend Detail " + legInfo);
       div.innerHTML = legInfo;
 
-      legendInfo.forEach(function (marker) {
-        labels.push("<li style='background-color: " + marker[1] + "'></li>");
+      legendInfo.forEach(function (colorValue, index) {
+        if (index == 5) {
+          labels.push("<li style=\"background-color: " + colorValue + "\">5+</li>");
+        } else {
+          labels.push("<li style=\"background-color: " + colorValue + "\">" + index + "-" + (index+1) + "</li>");
+        }
       });
 
+      console.log("Labels: " + labels);
       div.innerHTML += "<ul>" + labels.join("") + "</ul>";
 
       return div;
