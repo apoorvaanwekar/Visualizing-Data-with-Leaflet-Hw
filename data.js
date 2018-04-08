@@ -22,8 +22,6 @@ function markerSize (magnitude) {
 
 var legendInfo = [];
 
-
-
 // call to earthquake url
 d3.json(quakeUrl, function (error, data) {
   // colors based on magnitude
@@ -36,7 +34,6 @@ d3.json(quakeUrl, function (error, data) {
   for (idx = 0; idx <= 5; idx++) {
     legendInfo.push(getColors2(idx));
   }
-  console.log("Colors " + getColors2);
 
   // add geoJSON data
   var quakesGeoJSON = L.geoJSON(data, {
@@ -65,9 +62,9 @@ d3.json(quakeUrl, function (error, data) {
     var platesGeoJSON = L.geoJSON(pData, {
       style: function(feature) {
         return {
-          color: "#999",
-          weight: 1,
-          fillOpacity: 0.1
+          color: "orange",
+          weight: 2,
+          fillOpacity: 1
         };
       }
     });
@@ -90,14 +87,8 @@ d3.json(quakeUrl, function (error, data) {
 
       var labels = [];
 
-      // Add min & max
-      var legInfo = "<h1>Earthquake Magnitude</h1>"/* +
-            "<div class=\"labels\">" +
-            "<div class=\"min\">" + legendInfo[0] + "</div>" +
-            "<div class=\"max\">" + legendInfo[legendInfo.length - 1] + "</div>" +
-          "</div>"*/;
+      var legInfo = "<h1>Earthquake Magnitude</h1>";
 
-      console.log("Legend Detail " + legInfo);
       div.innerHTML = legInfo;
 
       legendInfo.forEach(function (colorValue, index) {
@@ -108,18 +99,25 @@ d3.json(quakeUrl, function (error, data) {
         }
       });
 
-      console.log("Labels: " + labels);
       div.innerHTML += "<ul>" + labels.join("") + "</ul>";
 
       return div;
     };
 
+    sliderControl = L.control.sliderControl({
+        position: "bottomleft",
+        layer: quakesGeoJSON, 
+        timeAttribute: "epoch",
+        isEpoch: true,
+        range: true
+    });
+
     // Adding legend to the map
     legends.addTo(myMap);
 
     var overlayLayers = {
-      'Quake': quakesGeoJSON,
-      'Plates': platesGeoJSON
+      'Earthquakes': quakesGeoJSON,
+      'Faultlines': platesGeoJSON
     };
 
     var baseLayers = {
@@ -131,5 +129,7 @@ d3.json(quakeUrl, function (error, data) {
     L.control
       .layers(baseLayers, overlayLayers)
       .addTo(myMap);
+    myMap.addControl(sliderControl);
+    sliderControl.startSlider();
   });
 });
